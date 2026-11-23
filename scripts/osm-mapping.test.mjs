@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapElements, overpassQuery, seasonFromOpeningHours } from './osm-mapping.mjs';
+import { mapElements, overpassQuery, seasonFromOpeningHours } from '../supabase/functions/import-osm/osm-mapping.mjs';
 
 // Izmišljeni elementi u OSM formatu
 const elements = [
@@ -56,6 +56,18 @@ test('addr:city ima prednost, daleko od naselja nema kvarta', () => {
   assert.equal(r.city, 'Negdje');
   assert.equal(r.district, null);
   assert.ok(r.tags.includes('slastice'));
+});
+
+test('grad ima prednost pred bližim središtem sela', () => {
+  const els = [
+    { type: 'node', id: 20, lat: 45.5550, lon: 18.6950, tags: { place: 'city', name: 'Grad' } },
+    { type: 'node', id: 21, lat: 45.5700, lon: 18.7200, tags: { place: 'village', name: 'Selo' } },
+    { type: 'node', id: 22, lat: 45.5650, lon: 18.7100, tags: { amenity: 'cafe', name: 'Na rubu grada' } },
+    { type: 'node', id: 23, lat: 45.5702, lon: 18.7203, tags: { amenity: 'pub', name: 'U selu' } },
+  ];
+  const rows = mapElements(els);
+  assert.equal(rows.find((r) => r.osm_id === 22).city, 'Grad');
+  assert.equal(rows.find((r) => r.osm_id === 23).city, 'Selo');
 });
 
 test('sezona iz radnog vremena', () => {

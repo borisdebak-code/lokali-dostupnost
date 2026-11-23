@@ -21,13 +21,15 @@ Nova regija se dodaje jednim retkom u tablici `regions` i ponovnim pokretanjem u
 | Kapacitet | korisnici (medijan prijava) → kasnije vlasnici; OSM `capacity` gdje postoji |
 | Gužva | prijave korisnika („ima mjesta / srednje / gužva”), agregirano po danu i satu |
 | Google ocjena | zasad samo gumb „Google Karte”; stupac `google_place_id` je spreman za Places API |
+| Karta (podloga) | OpenFreeMap + MapLibre u WebViewu — besplatno, bez API ključa i bez Google računa |
 
 ## Struktura
 
 ```
-supabase/migrations/   shema baze (PostGIS, RLS, funkcije za pretragu i uvoz)
+supabase/migrations/   shema baze (PostGIS, RLS, funkcije za pretragu i uvoz, dnevnik uvoza)
+supabase/functions/    Edge funkcija import-osm (uvoz iz OpenStreetMapa, radi na Supabaseu)
 supabase/tests/        lokalni SQL test (bez Supabasea)
-scripts/               uvoz iz OpenStreetMapa + testovi mapiranja
+scripts/               isti uvoz kao skripta za vlastito računalo + testovi mapiranja
 src/app/               ekrani (expo-router): (tabs)/index = Za grupe, karta, popis, spremljeno, lokal/[id]
 src/lib/               Supabase klijent, API, radno vrijeme (opening_hours), oznake
 src/components/        UI komponente
@@ -41,43 +43,60 @@ src/components/        UI komponente
 - `crowd_reports` – prijave gužve (najviše 1 u 20 min po korisniku i lokalu); sirove prijave nisu javne
 - `saved_venues` – osobna shortlista (status + bilješka)
 - `venue_cards` (view), `search_venues`, `typical_crowd`, `venue_busyness`, `region_cities` – ono što aplikacija čita
-- `upsert_osm_venues`, `deactivate_missing_osm_venues` – samo za skriptu uvoza (service_role).
+- `upsert_osm_venues`, `deactivate_missing_osm_venues` – samo za uvoz (service_role).
   Uvoz ne gazi korisnički kapacitet ni podatke koje je potvrdio vlasnik (`owner_verified_at`).
+- `import_runs` – dnevnik uvoza (status, broj lokala, greška); `trigger_osm_import(regija)` pokreće uvoz
 
 ## Postavljeno okruženje
 
-- Supabase projekt: **lokali-dostupnost** (Frankfurt, `eu-central-1`), URL `https://dcxbnsdhtxwtgnixqiuq.supabase.co`
-- Migracija `20261123000001_init.sql` je primijenjena, a anonimna prijava je uključena
-- Baza je još prazna: lokali se pune skriptom za uvoz (korak 2 ispod)
-- Ključeve (publishable / anon za aplikaciju, secret / service_role za uvoz) nađeš u Supabaseu pod
-  Project Settings → API Keys
+- **Supabase** projekt **lokali-dostupnost** (Frankfurt), `https://dcxbnsdhtxwtgnixqiuq.supabase.co`
+  - migracije su primijenjene, anonimna prijava je uključena
+  - Edge funkcija `import-osm` je objavljena; tajna `IMPORT_SECRET` je postavljena u funkciji i u Vaultu
+- **Expo / EAS** projekt `@bdebak/stolovi`; `EXPO_PUBLIC_SUPABASE_URL` i `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+  postavljeni su kao EAS varijable (development, preview, production)
 
-## Pokretanje
+## Uvoz lokala (osvježavanje podataka)
 
-1. **Supabase projekt** (već napravljen, vidi gore; ovo vrijedi za novi projekt)
-   - SQL editor → zalijepi i pokreni `supabase/migrations/20261123000001_init.sql`
-     (ili `npx supabase db push` ako koristiš Supabase CLI)
-   - Authentication → Sign In / Providers → uključi **Anonymous sign-ins**
-     (korisnici mogu prijavljivati gužvu/kapacitet bez registracije)
+U Supabaseu → SQL Editor:
 
-2. **Uvoz lokala** (na svom računalu, treba internet do overpass-api.de)
-   ```bash
-   cp .env.import.example .env.import   # upiši URL i service_role ključ
-   npm install
-   npm run import:osm -- zagreb --dry-run
-   npm run import:osm -- zagreb
-   npm run import:osm -- istocna-slavonija
-   ```
-   Uvoz se može ponavljati (npr. jednom tjedno). Novi lokali se dodaju, a zatvoreni se skrivaju.
+```sql
+select public.trigger_osm_import('zagreb');
+-- pričekaj ~2 minute, pa:
+select public.trigger_osm_import('istocna-slavonija');
 
-3. **Aplikacija**
-   ```bash
-   cp .env.example .env                 # upiši URL i anon (publishable) ključ
-   npx expo start
-   ```
-   Otvori u Expo Go na mobitelu (skeniraj QR kod).
-   Za objavu u trgovinama: `npx eas-cli@latest build`. Za Android build treba Google Maps SDK ključ
-   (`android.config.googleMaps.apiKey` u app.json; mobilni Maps SDK je besplatan). iOS koristi Apple Maps.
+select * from public.import_runs order by id desc;   -- status i broj lokala
+```
+
+Uvoz traje 1–3 minute po regiji i može se ponavljati. Novi lokali se dodaju, a nestali se skrivaju.
+Za automatski tjedni uvoz vidi komentar na kraju `supabase/migrations/20261124000001_osm_import_schedule.sql`.
+
+Alternativa sa svog računala: `cp .env.import.example .env.import` (URL + secret ključ), pa
+`npm run import:osm -- zagreb`.
+
+## Aplikacija
+
+**Android (APK za instalaciju):**
+
+```bash
+npx eas-cli@latest build -p android --profile preview
+```
+
+Na kraju dobiješ link/QR kod za preuzimanje APK-a. Na mobitelu dopusti instalaciju iz tog izvora.
+
+**iPhone:** potreban je Apple Developer račun (99 USD godišnje). Zatim:
+
+```bash
+npx eas-cli@latest device:create
+```
+```bash
+npx eas-cli@latest build -p ios --profile preview
+```
+
+Prvi registrira tvoj iPhone, a drugi radi build koji se instalira preko linka.
+Bez Apple računa aplikaciju možeš isprobati u **Expo Go**: `cp .env.example .env` (URL + publishable ključ),
+`npx expo start`, pa skeniraj QR kod.
+
+**Nova verzija** nakon promjene koda: isti `eas build` naredbe.
 
 ## Provjere
 

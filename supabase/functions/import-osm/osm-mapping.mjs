@@ -20,7 +20,7 @@ export function overpassQuery(areaNames) {
   const areas = areaNames
     .map((n) => `area["name"="${n.replace(/"/g, '\\"')}"]["boundary"="administrative"];`)
     .join('\n  ');
-  return `[out:json][timeout:300];
+  return `[out:json][timeout:120];
 (
   ${areas}
 )->.a;
@@ -126,17 +126,21 @@ function distanceKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 
-function nearest(point, places, maxKm) {
+// Doseg mjesta u km: grad "pokriva" veće područje od sela, pa lokal u Osijeku
+// ne pripadne prigradskom naselju samo zato što mu je središte bliže.
+const REACH_KM = { city: 8, town: 4, village: 1.5, suburb: 1.5, quarter: 1, neighbourhood: 0.6 };
+
+function nearest(point, places) {
   let best = null;
-  let bestD = Infinity;
+  let bestScore = Infinity;
   for (const p of places) {
-    const d = distanceKm(point, p);
-    if (d < bestD) {
-      bestD = d;
+    const score = distanceKm(point, p) / (REACH_KM[p.place] ?? 1);
+    if (score < bestScore) {
+      bestScore = score;
       best = p;
     }
   }
-  return best && bestD <= maxKm ? best.name : null;
+  return best && bestScore <= 1 ? best.name : null;
 }
 
 export function mapElements(elements) {
@@ -147,7 +151,7 @@ export function mapElements(elements) {
     if (!place || !el.tags?.name) continue;
     const c = coords(el);
     if (!c) continue;
-    const item = { ...c, name: el.tags.name };
+    const item = { ...c, name: el.tags.name, place };
     if (place === 'city' || place === 'town' || place === 'village') settlements.push(item);
     else districts.push(item);
   }
@@ -162,8 +166,8 @@ export function mapElements(elements) {
     if (!c) continue;
 
     const cuisine = splitList(tags.cuisine);
-    const city = tags['addr:city'] || nearest(c, settlements, 6);
-    const district = nearest(c, districts, 2);
+    const city = tags['addr:city'] || nearest(c, settlements);
+    const district = nearest(c, districts);
 
     rows.push({
       osm_type: el.type,

@@ -8,7 +8,7 @@
 // Podaci: © OpenStreetMap contributors, ODbL — u aplikaciji mora stajati atribucija.
 
 import { createClient } from '@supabase/supabase-js';
-import { mapElements, overpassQuery } from './osm-mapping.mjs';
+import { mapElements, overpassQuery } from '../supabase/functions/import-osm/osm-mapping.mjs';
 
 const OVERPASS_URL = process.env.OVERPASS_URL || 'https://overpass-api.de/api/interpreter';
 const BATCH = 500;
