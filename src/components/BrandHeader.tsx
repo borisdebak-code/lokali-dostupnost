@@ -10,7 +10,7 @@ export function BrandHeader({ subtitle }: { subtitle?: string }) {
       </View>
       <View>
         <Text style={styles.title}>
-          <Text style={{ color: colors.accent }}>FFF</Text> Fast Facts Finder
+          <Text style={{ color: colors.accent }}>FFF</Text> Finder
         </Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>

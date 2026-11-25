@@ -1,4 +1,4 @@
-# FFF · Fast Facts Finder
+# FF Finder (FFF · Fast Facts Finder)
 
 Mobilna aplikacija (Expo / React Native + Supabase) s popisom ugostiteljskih objekata u Hrvatskoj.
 Prvenstveno je namijenjena **organizatorima grupa** (kvizovi, okupljanja), a zatim turistima i lokalcima.
