@@ -34,7 +34,7 @@ export function VenueCard({ venue: v, distanceM, open, typicalCrowd, note }: Pro
           <View style={styles.capacity}>
             <Ionicons name="people-outline" size={14} color={colors.text} />
             <Text style={styles.capacityText}>
-              {v.capacity_total != null ? `${v.capacity_total} mjesta` : 'kapacitet ?'}
+              {v.capacity_total != null ? `${v.capacity_total} mjesta` : 'kapacitet nepoznat'}
             </Text>
           </View>
           {open === true && <Text style={[styles.pill, { color: colors.ok }]}>Otvoreno</Text>}

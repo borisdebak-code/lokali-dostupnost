@@ -307,7 +307,7 @@ function FeatureList({ venue, features }: { venue: Venue; features: Feature[] })
         return (
           <View key={f} style={styles.featureRow}>
             <Ionicons
-              name={val === true ? 'checkmark-circle' : val === false ? 'close-circle' : 'help-circle-outline'}
+              name={val === true ? 'checkmark-circle' : val === false ? 'close-circle' : 'remove-circle-outline'}
               size={20}
               color={val === true ? colors.ok : val === false ? colors.bad : colors.muted}
             />

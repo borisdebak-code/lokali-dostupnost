@@ -1,4 +1,4 @@
-# Lokali – dostupnost (radni naziv: Stolovi)
+# FFF · Fast Facts Finder
 
 Mobilna aplikacija (Expo / React Native + Supabase) s popisom ugostiteljskih objekata u Hrvatskoj.
 Prvenstveno je namijenjena **organizatorima grupa** (kvizovi, okupljanja), a zatim turistima i lokalcima.
@@ -88,7 +88,9 @@ Lokal koji nije u bazi doda se ako su upisani `lat` i `lng`. Može i ručno u Su
 
 ## Ikona
 
-Prijedlozi ikone „FFF · Fast Facts Finder” su u `design/ikona-prijedlozi/` (SVG + pregled `sheet.png`).
+Ikona: pinta kojoj je pjena mozak, iza prekriženi vilica i nož (tamnoplava #1B2A4A, pivo #F5A524).
+Izvor je `design/ikona/generate.py` (SVG); PNG-ovi u `assets/` napravljeni su iz tih SVG-ova.
+Raniji prijedlozi su u `design/ikona-prijedlozi/`.
 
 ## Aplikacija
 

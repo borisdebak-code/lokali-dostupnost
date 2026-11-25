@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ColorValue } from 'react-native';
 import { Tabs } from 'expo-router/js-tabs';
+import { BrandHeader } from '../../components/BrandHeader';
 import { colors } from '../../lib/theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -21,7 +22,7 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Za grupe', headerTitle: 'Gdje s ekipom?', tabBarIcon: icon('people') }} />
+      <Tabs.Screen name="index" options={{ title: 'Za grupe', headerTitle: () => <BrandHeader subtitle="Gdje s ekipom?" />, tabBarIcon: icon('people') }} />
       <Tabs.Screen name="kvizovi" options={{ title: 'Kvizovi', headerTitle: 'Kvizovi', tabBarIcon: icon('bulb') }} />
       <Tabs.Screen name="karta" options={{ title: 'Karta', tabBarIcon: icon('map') }} />
       <Tabs.Screen name="popis" options={{ title: 'Popis', headerTitle: 'Lokali', tabBarIcon: icon('list') }} />
