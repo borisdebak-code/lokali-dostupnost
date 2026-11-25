@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
 import { Chip } from '../../components/Chip';
 import { Notice } from '../../components/Section';
 import { VenueMap, type VenueMapHandle } from '../../components/VenueMap';
@@ -170,6 +170,11 @@ export default function QuizScreen() {
       renderSectionHeader={({ section }) => <Text style={styles.sectionTitle}>{section.title}</Text>}
       renderItem={({ item }) => <QuizRow row={item} />}
       ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+      ListFooterComponent={
+        quizzes.some((q) => q.signup_url?.includes('quisco.co')) ? (
+          <Text style={styles.attribution}>Podaci o kvizovima: Quisco (quisco.co)</Text>
+        ) : undefined
+      }
       ListEmptyComponent={
         !loading ? (
           <Notice
@@ -188,9 +193,12 @@ export default function QuizScreen() {
 function QuizRow({ row }: { row: Row }) {
   const q = row.quiz;
   const catColor = q.category === 'jelo' ? colors.jelo : colors.pice;
+  const openVenue = () => router.push({ pathname: '/lokal/[id]', params: { id: q.venue_id } });
+  const fromQuisco = q.signup_url?.includes('quisco.co') ?? false;
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/lokal/[id]', params: { id: q.venue_id } })}
+      // Klik na kviz vodi na njegovu stranicu (npr. Quisco), a gumb "Lokal" na detalje lokala
+      onPress={() => (q.signup_url ? Linking.openURL(q.signup_url) : openVenue())}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
     >
       <View style={styles.time}>
@@ -206,12 +214,23 @@ function QuizRow({ row }: { row: Row }) {
         </Text>
         <Text style={styles.meta} numberOfLines={1}>
           {q.title}
-          {q.organizer_name ? ` · ${q.organizer_name}` : ''} · {FREQUENCY_LABEL[q.frequency]}
+          {q.organizer_name ? ` · ${q.organizer_name}` : ''}
+          {q.frequency !== 'povremeno' ? ` · ${FREQUENCY_LABEL[q.frequency]}` : ''}
         </Text>
         <View style={styles.badges}>
           {q.capacity_total != null && <Text style={styles.pill}>{q.capacity_total} mjesta</Text>}
           {q.team_size_max != null && <Text style={styles.pill}>do {q.team_size_max} po ekipi</Text>}
           {q.entry_fee_eur != null && <Text style={styles.pill}>{Number(q.entry_fee_eur).toFixed(2).replace('.', ',')} €</Text>}
+        </View>
+        <View style={styles.actions}>
+          {q.signup_url && (
+            <Text style={styles.link}>
+              {fromQuisco ? 'Otvori na Quiscu' : 'Prijava'} <Ionicons name="open-outline" size={13} color={colors.primary} />
+            </Text>
+          )}
+          <Pressable onPress={openVenue} hitSlop={8}>
+            <Text style={styles.link}>Lokal ›</Text>
+          </Pressable>
         </View>
       </View>
     </Pressable>
@@ -246,6 +265,9 @@ const styles = StyleSheet.create({
     fontSize: 12, color: colors.muted, backgroundColor: colors.bg, paddingHorizontal: 8, paddingVertical: 2,
     borderRadius: radius.pill, overflow: 'hidden',
   },
+  actions: { flexDirection: 'row', gap: 18, marginTop: 4 },
+  link: { fontSize: 13, fontWeight: '700', color: colors.primary },
+  attribution: { color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 20 },
   mapTop: { position: 'absolute', top: 10, left: 12, right: 12, gap: 8 },
   mapBottom: { position: 'absolute', left: 12, right: 12, bottom: 16, gap: 8 },
 });

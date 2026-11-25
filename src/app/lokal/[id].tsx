@@ -116,7 +116,7 @@ export default function VenueScreen() {
               {q.notes ? <Text style={styles.hint}>{q.notes}</Text> : null}
               {q.signup_url ? (
                 <Text style={[styles.body, { color: colors.primary }]} onPress={() => Linking.openURL(q.signup_url!)}>
-                  Prijava ekipe ›
+                  {q.signup_url!.includes('quisco.co') ? 'Otvori na Quiscu ›' : 'Prijava ekipe ›'}
                 </Text>
               ) : null}
             </View>
