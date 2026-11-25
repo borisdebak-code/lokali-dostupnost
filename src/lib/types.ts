@@ -79,3 +79,34 @@ export type Busyness = { isodow: number; hour: number; level: number; reports: n
 export type TypicalCrowd = { venue_id: string; level: number; reports: number };
 export type RegionCity = { city: string; venues: number; lat: number; lng: number };
 export type SavedVenue = { venue_id: string; status: SavedStatus; note: string | null; updated_at: string };
+
+export type QuizFrequency = 'tjedno' | 'svaki_drugi_tjedan' | 'mjesecno' | 'povremeno';
+
+export type QuizCard = {
+  id: number;
+  title: string;
+  weekday: number | null; // 1 = ponedjeljak
+  start_time: string | null; // "20:00:00"
+  frequency: QuizFrequency;
+  next_date: string | null; // "2026-12-03"
+  team_size_max: number | null;
+  entry_fee_eur: number | null;
+  signup_url: string | null;
+  notes: string | null;
+  organizer_id: number | null;
+  organizer_name: string | null;
+  organizer_website: string | null;
+  organizer_instagram: string | null;
+  venue_id: string;
+  venue_name: string;
+  category: Category;
+  venue_type: string;
+  region_id: number;
+  city: string | null;
+  district: string | null;
+  address: string | null;
+  lat: number;
+  lng: number;
+  capacity_total: number | null;
+  phone: string | null;
+};

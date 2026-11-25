@@ -113,4 +113,21 @@ select pg_temp.assert((select outdoor_seating from public.venues where osm_id = 
 
 select pg_temp.assert((select not is_active from public.venues where osm_id = 3), 'nestali lokal skriven');
 
+-- 5) Kvizovi
+insert into public.quiz_nights (venue_id, organizer_id, weekday, start_time)
+  select v.id, o.id, 2, '20:00' from public.venues v, public.quiz_organizers o
+  where v.osm_id = 2 and o.name = 'Fast Facts Trivia';
+select pg_temp.assert((select hosts_events from public.venues where osm_id = 2), 'lokal s kvizom dobiva oznaku eventi');
+set role anon;
+select pg_temp.assert((select count(*) from public.quiz_cards) = 1, 'anon vidi kviz');
+select pg_temp.assert((select organizer_name from public.quiz_cards) = 'Fast Facts Trivia', 'organizator');
+do $$ begin
+  begin
+    insert into public.quiz_nights (venue_id, weekday) select id, 1 from public.venues limit 1;
+    raise exception 'anon ne smije dodavati kvizove';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
 select 'SVI TESTOVI PROŠLI' as rezultat;

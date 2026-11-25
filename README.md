@@ -8,6 +8,7 @@ Prvenstveno je namijenjena **organizatorima grupa** (kvizovi, okupljanja), a zat
 - **Karta / Popis:** dvije vrste, 🍽 Jelo i 🍺 Piće, s filterima (otvoreno sad, terasa, kartice, Wi‑Fi, psi…).
 - **Lokal:** kapacitet (unutra/terasa), gužva sad, tipična gužva po danu i satu, oprema za kvizove
   (separe, projektor/TV, ozvučenje), radno vrijeme, sezonalnost, link na Google Karte.
+- **Kvizovi:** lokali s redovitim pub kvizovima (npr. Fast Facts Trivia), po danima, kao popis ili na karti.
 - **Spremljeno:** shortlista lokala sa statusom dogovora (ideja → kontaktirano → dogovoreno) i bilješkom.
 
 Početne regije su **Zagreb** i **Istočna Slavonija** (Osječko-baranjska i Vukovarsko-srijemska županija).
@@ -72,6 +73,22 @@ Za automatski tjedni uvoz vidi komentar na kraju `supabase/migrations/2026112400
 
 Alternativa sa svog računala: `cp .env.import.example .env.import` (URL + secret ključ), pa
 `npm run import:osm -- zagreb`.
+
+## Kvizovi (unos lokacija)
+
+1. Upiši kvizove u `data/kvizovi.csv` (jedan red = jedan redoviti kviz). Stupci:
+   `organizator, regija (zagreb / istocna-slavonija), mjesto, lokal, dan (pon..ned), vrijeme (20:00),
+   ucestalost (tjedno / svaki_drugi_tjedan / mjesecno / povremeno), datum, max_po_ekipi, kotizacija_eur,
+   prijava_url, napomena, lat, lng`
+2. Provjera: `npm run import:kvizovi -- --dry-run` (javlja lokale koje ne može pronaći)
+3. Upis: `npm run import:kvizovi`
+
+Popis jednog organizatora je mjerodavan: ponovni uvoz zamijeni sve njegove kvizove onima iz datoteke.
+Lokal koji nije u bazi doda se ako su upisani `lat` i `lng`. Može i ručno u Supabaseu (Table Editor → `quiz_nights`).
+
+## Ikona
+
+Prijedlozi ikone „FFF · Fast Facts Finder” su u `design/ikona-prijedlozi/` (SVG + pregled `sheet.png`).
 
 ## Aplikacija
 

@@ -1,6 +1,6 @@
 import { supabase, ensureUser } from './supabase';
 import type {
-  Busyness, Region, RegionCity, SavedStatus, SavedVenue, SearchParams, TypicalCrowd, Venue,
+  Busyness, QuizCard, Region, RegionCity, SavedStatus, SavedVenue, SearchParams, TypicalCrowd, Venue,
 } from './types';
 
 function check<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -88,4 +88,14 @@ export async function saveVenue(venueId: string, patch: { status?: SavedStatus; 
 export async function unsaveVenue(venueId: string): Promise<void> {
   await ensureUser();
   check(await supabase.from('saved_venues').delete().eq('venue_id', venueId));
+}
+
+export async function getQuizzes(regionId?: number | null): Promise<QuizCard[]> {
+  let q = supabase.from('quiz_cards').select('*');
+  if (regionId != null) q = q.eq('region_id', regionId);
+  return check(await q);
+}
+
+export async function getVenueQuizzes(venueId: string): Promise<QuizCard[]> {
+  return check(await supabase.from('quiz_cards').select('*').eq('venue_id', venueId));
 }

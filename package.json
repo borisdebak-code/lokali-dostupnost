@@ -35,9 +35,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "import:osm": "node --env-file=.env.import scripts/import-osm.mjs",
-    "test": "node --test scripts/osm-mapping.test.mjs",
+    "test": "node --test scripts/osm-mapping.test.mjs scripts/import-quizzes.test.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "import:kvizovi": "node --env-file=.env.import scripts/import-quizzes.mjs"
   },
   "private": true
 }

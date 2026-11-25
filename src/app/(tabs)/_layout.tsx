@@ -22,6 +22,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Za grupe', headerTitle: 'Gdje s ekipom?', tabBarIcon: icon('people') }} />
+      <Tabs.Screen name="kvizovi" options={{ title: 'Kvizovi', headerTitle: 'Kvizovi', tabBarIcon: icon('bulb') }} />
       <Tabs.Screen name="karta" options={{ title: 'Karta', tabBarIcon: icon('map') }} />
       <Tabs.Screen name="popis" options={{ title: 'Popis', headerTitle: 'Lokali', tabBarIcon: icon('list') }} />
       <Tabs.Screen name="spremljeno" options={{ title: 'Spremljeno', headerTitle: 'Moj popis', tabBarIcon: icon('bookmark') }} />

@@ -1,36 +1,22 @@
-import { type ComponentType, type Ref, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { WebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 import { Chip } from '../../components/Chip';
 import { VenueCard } from '../../components/VenueCard';
+import { VenueMap, type MapViewState, type VenueMapHandle } from '../../components/VenueMap';
 import { getRegions, searchVenues } from '../../lib/api';
+import { regionZoom } from '../../lib/geo';
 import { isOpenAt } from '../../lib/hours';
 import { getMyLocation } from '../../lib/location';
-import { buildMapHtml, type MapMessage, type MapPoint } from '../../lib/mapHtml';
+import type { MapPoint } from '../../lib/mapHtml';
 import { isConfigured } from '../../lib/supabase';
 import { colors, radius } from '../../lib/theme';
 import type { Category, Region, Venue } from '../../lib/types';
 
-// Tipovi paketa daju `never` za props kad se generik ne navede; ovo je isti komponent s ispravnim tipom.
-type WebViewHandle = { injectJavaScript: (script: string) => void };
-const MapWebView = WebView as unknown as ComponentType<WebViewProps & { ref?: Ref<WebViewHandle> }>;
-
 const START = { lat: 45.8131, lng: 15.9775, zoom: 13 };
 const MIN_ZOOM_FOR_VENUES = 10;
 
-type MapViewState = { lat: number; lng: number; radiusM: number; zoom: number };
-
-function regionZoom(r: Region): number {
-  // radijus regije -> približni zoom
-  return Math.max(8, Math.min(14, Math.round(14 - Math.log2(r.radius_m / 3000))));
-}
-
 export default function MapScreen() {
-  const webRef = useRef<WebViewHandle>(null);
-  const html = useMemo(
-    () => buildMapHtml({ ...START, colors: { jelo: colors.jelo, pice: colors.pice, me: '#2563EB' } }),
-    [],
-  );
+  const mapRef = useRef<VenueMapHandle>(null);
   const [regions, setRegions] = useState<Region[]>([]);
   const [view, setView] = useState<MapViewState | null>(null);
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -40,8 +26,6 @@ export default function MapScreen() {
   const [category, setCategory] = useState<Category | null>(null);
   const [openNow, setOpenNow] = useState(false);
   const [terrace, setTerrace] = useState(false);
-
-  const run = (js: string) => webRef.current?.injectJavaScript(`${js}; true;`);
 
   useEffect(() => {
     if (isConfigured) getRegions().then(setRegions).catch(() => {});
@@ -80,53 +64,36 @@ export default function MapScreen() {
     return venues.filter((v) => isOpenAt(v, now) === true);
   }, [venues, openNow, tooWide]);
 
-  // pošalji točke karti
-  useEffect(() => {
-    const pts: MapPoint[] = shown.map((v) => ({ id: v.id, lat: v.lat, lng: v.lng, category: v.category }));
-    webRef.current?.injectJavaScript(`window.setVenues && window.setVenues(${JSON.stringify(pts)}); true;`);
-  }, [shown]);
-
-  useEffect(() => {
-    webRef.current?.injectJavaScript(`window.setSelected && window.setSelected(${JSON.stringify(selected?.id ?? null)}); true;`);
-  }, [selected]);
-
-  const onMessage = (e: WebViewMessageEvent) => {
-    let msg: MapMessage;
-    try {
-      msg = JSON.parse(e.nativeEvent.data);
-    } catch {
-      return;
-    }
-    if (msg.type === 'move') setView({ lat: msg.lat, lng: msg.lng, radiusM: msg.radiusM, zoom: msg.zoom });
-    else if (msg.type === 'select') setSelected(shown.find((v) => v.id === msg.id) ?? null);
-    else if (msg.type === 'deselect') setSelected(null);
-    else if (msg.type === 'error') setMapError(msg.message);
-    else if (msg.type === 'ready') setMapError(null);
-  };
+  const points = useMemo<MapPoint[]>(
+    () => shown.map((v) => ({ id: v.id, lat: v.lat, lng: v.lng, category: v.category })),
+    [shown],
+  );
 
   const goToMe = async () => {
     const c = await getMyLocation();
-    if (c) run(`window.setMe(${c.lat}, ${c.lng}); window.flyTo(${c.lat}, ${c.lng}, 15)`);
+    if (c) {
+      mapRef.current?.setMe(c.lat, c.lng);
+      mapRef.current?.flyTo(c.lat, c.lng, 15);
+    }
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <MapWebView
-        ref={webRef}
-        style={StyleSheet.absoluteFill}
-        originWhitelist={['*']}
-        source={{ html, baseUrl: 'https://localhost/' }}
-        onMessage={onMessage}
-        javaScriptEnabled
-        setSupportMultipleWindows={false}
-        overScrollMode="never"
-        bounces={false}
+      <VenueMap
+        ref={mapRef}
+        initial={START}
+        points={points}
+        selectedId={selected?.id ?? null}
+        onMove={setView}
+        onSelect={(id) => setSelected(shown.find((v) => v.id === id) ?? null)}
+        onDeselect={() => setSelected(null)}
+        onError={setMapError}
       />
 
       <View style={styles.top} pointerEvents="box-none">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {regions.map((r) => (
-            <Chip key={r.id} label={r.name} onPress={() => run(`window.flyTo(${r.center_lat}, ${r.center_lng}, ${regionZoom(r)})`)} />
+            <Chip key={r.id} label={r.name} onPress={() => mapRef.current?.flyTo(r.center_lat, r.center_lng, regionZoom(r))} />
           ))}
           <Chip label="📍 Ja" onPress={goToMe} />
         </ScrollView>

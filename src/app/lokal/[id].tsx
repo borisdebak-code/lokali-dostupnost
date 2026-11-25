@@ -9,15 +9,16 @@ import { Chip } from '../../components/Chip';
 import { CrowdBadge } from '../../components/CrowdBadge';
 import { Notice, Section } from '../../components/Section';
 import {
-  getBusyness, getSavedOne, getVenue, reportCapacity, reportCrowd, saveVenue, unsaveVenue,
+  getBusyness, getSavedOne, getVenue, getVenueQuizzes, reportCapacity, reportCrowd, saveVenue, unsaveVenue,
 } from '../../lib/api';
+import { scheduleText } from '../../lib/quiz';
 import { isInSeason, isOpenAt, prettyHours } from '../../lib/hours';
 import {
   CAPACITY_SOURCE, CATEGORY, FEATURE_LABEL, featureValue, GROUP_FEATURES, MONTHS, PRACTICAL_FEATURES,
   SAVED_STATUS, VENUE_TYPE,
 } from '../../lib/labels';
 import { colors, radius } from '../../lib/theme';
-import type { Busyness, Feature, SavedStatus, SavedVenue, Venue } from '../../lib/types';
+import type { Busyness, Feature, QuizCard, SavedStatus, SavedVenue, Venue } from '../../lib/types';
 
 function errMsg(e: unknown) {
   return e instanceof Error ? e.message : String(e);
@@ -28,6 +29,7 @@ export default function VenueScreen() {
   const [venue, setVenue] = useState<Venue | null>(null);
   const [busyness, setBusyness] = useState<Busyness[]>([]);
   const [saved, setSaved] = useState<SavedVenue | null>(null);
+  const [quizzes, setQuizzes] = useState<QuizCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +49,7 @@ export default function VenueScreen() {
   useEffect(() => {
     reload();
     getSavedOne(id).then(setSaved).catch(() => {});
+    getVenueQuizzes(id).then(setQuizzes).catch(() => {});
   }, [id, reload]);
 
   if (loading) return <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} />;
@@ -100,6 +103,26 @@ export default function VenueScreen() {
       <Text style={styles.hint}>Google ocjenu za sada vidiš preko gumba „Google Karte”.</Text>
 
       {saved && <SavedEditor saved={saved} onChange={setSaved} />}
+
+      {quizzes.length > 0 && (
+        <Section title="Kviz ovdje">
+          {quizzes.map((q) => (
+            <View key={q.id} style={{ gap: 2 }}>
+              <Text style={styles.label}>
+                {q.title}
+                {q.organizer_name ? ` · ${q.organizer_name}` : ''}
+              </Text>
+              <Text style={styles.body}>{scheduleText(q)}</Text>
+              {q.notes ? <Text style={styles.hint}>{q.notes}</Text> : null}
+              {q.signup_url ? (
+                <Text style={[styles.body, { color: colors.primary }]} onPress={() => Linking.openURL(q.signup_url!)}>
+                  Prijava ekipe ›
+                </Text>
+              ) : null}
+            </View>
+          ))}
+        </Section>
+      )}
 
       <CapacitySection venue={v} onSaved={reload} />
 
